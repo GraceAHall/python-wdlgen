@@ -120,7 +120,7 @@ class WdlType:
             return wd + ("?" if self.optional else "")
 
     @staticmethod
-    def parse_type(t, requires_type=True):
+    def parse_type(t, has_default=False, requires_type=True):
         """
         Will parse the type
         :param t:
@@ -133,7 +133,7 @@ class WdlType:
             raise Exception("Must pass a value to parse_type")
 
         if isinstance(t, list):
-            return [WdlType.parse_type(tt, requires_type) for tt in t]
+            return [WdlType.parse_type(tt, has_default, requires_type) for tt in t]
 
         if isinstance(t, WdlType):
             return t
@@ -142,6 +142,7 @@ class WdlType:
 
         if isinstance(t, str):
             optional_quantifier, multi_quantifier, t = WdlType.check_quantifiers(t)
+            is_optional = True if optional_quantifier and not has_default else False
 
             parse_attempt1 = PrimitiveType.parse(t)
             if parse_attempt1:
@@ -151,11 +152,11 @@ class WdlType:
                             tp=t_orig
                         )
                     )
-                return WdlType(parse_attempt1, optional=optional_quantifier)
+                return WdlType(parse_attempt1, optional=is_optional)
 
             parse_attempt2 = ArrayType.parse(t, multi_quantifier)
             if parse_attempt2:
-                return WdlType(parse_attempt2, optional=optional_quantifier)
+                return WdlType(parse_attempt2, optional=is_optional)
 
         if requires_type:
             raise Exception("Couldn't pass '{t}'".format(t=t_orig))
